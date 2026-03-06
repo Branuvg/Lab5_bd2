@@ -42,11 +42,11 @@ DB_NAME = "turismo"
 
 # Archivos JSON y la colección destino
 ARCHIVOS = {
-    "europa":  "costos_turisticos_europa.json",
-    "africa":  "costos_turisticos_africa.json",
-    "america": "costos_turisticos_america.json",
-    "asia":    "costos_turisticos_asia.json",
-    "big_mac": "paises_mundo_big_mac.json",
+    "europa":  "Datos_para_MongoDB\costos_turisticos_europa.json",
+    "africa":  "Datos_para_MongoDB\costos_turisticos_africa.json",
+    "america": "Datos_para_MongoDB\costos_turisticos_america.json",
+    "asia":    "Datos_para_MongoDB\costos_turisticos_asia.json",
+    "big_mac": "Datos_para_MongoDB\paises_mundo_big_mac.json",
 }
 
 # ─────────────────────────────────────────
