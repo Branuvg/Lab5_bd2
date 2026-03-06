@@ -20,8 +20,8 @@ import os
 # ─────────────────────────────────────────
 # CONFIGURACIÓN - ajusta las rutas si es necesario
 # ─────────────────────────────────────────
-CSV_ENVEJECIMIENTO  = "pais_envejecimiento.csv"   # <- ruta al CSV
-CSV_POBLACION       = "pais_poblacion.csv"         # <- ruta al CSV
+CSV_ENVEJECIMIENTO  = "Datos_para_SQL\pais_envejecimiento.csv"   # <- ruta al CSV
+CSV_POBLACION       = "Datos_para_SQL\pais_poblacion.csv"         # <- ruta al CSV
 DB_FUENTE           = "fuente_sql.db"              # <- nombre del archivo de salida
 
 # ─────────────────────────────────────────
