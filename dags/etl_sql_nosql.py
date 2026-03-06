@@ -173,18 +173,25 @@ def etl_sql_nosql():
     # ──────────────────────────────────────────────────────────────
     @task()
     def t4_integrar(sql_json: str, costos_json: str, bigmac_json: str) -> str:
-        df_sql    = pd.read_json(sql_json,    orient="records")
+        import io
+        df_sql    = pd.read_json(io.StringIO(sql_json), orient="records")
         df_costos = pd.DataFrame(json.loads(costos_json))
         df_bigmac = pd.DataFrame(json.loads(bigmac_json))
 
         log.info("T4 → SQL: %d | Costos: %d | BigMac: %d",
                  len(df_sql), len(df_costos), len(df_bigmac))
 
+        # Renombrar en df_costos las columnas que también existen en df_sql
+        # para evitar que pandas genere region_x / region_y tras el merge
+        for col in ["region", "capital", "poblacion", "continente"]:
+            if col in df_costos.columns:
+                df_costos.rename(columns={col: f"{col}_mongo"}, inplace=True)
+
         # Merge 1: costos + big mac por nombre de país
         df_temp = pd.merge(df_costos, df_bigmac, on="pais", how="inner")
         log.info("T4 → Merge costos+bigmac: %d filas", len(df_temp))
 
-        # Merge 2: resultado + SQL
+        # Merge 2: resultado + SQL (joined por nombre de país)
         df_final = pd.merge(
             df_temp,
             df_sql,
@@ -194,15 +201,27 @@ def etl_sql_nosql():
         )
         log.info("T4 → Merge con SQL: %d filas", len(df_final))
 
-        # Resolver continente: SQL tiene prioridad sobre Mongo
-        if "continente" in df_final.columns and "continente_mongo" in df_final.columns:
-            df_final["continente"] = df_final["continente"].combine_first(
-                df_final["continente_mongo"]
-            )
-        elif "continente_mongo" in df_final.columns:
-            df_final.rename(columns={"continente_mongo": "continente"}, inplace=True)
+        # Preferir continente de SQL; descartar versión Mongo
+        if "continente_mongo" in df_final.columns:
+            if "continente" not in df_final.columns:
+                df_final.rename(columns={"continente_mongo": "continente"}, inplace=True)
+            else:
+                df_final["continente"] = df_final["continente"].combine_first(
+                    df_final["continente_mongo"]
+                )
 
-        df_final.drop(columns=["nombre_pais", "continente_mongo"], errors="ignore", inplace=True)
+        # Eliminar columnas auxiliares y duplicadas de Mongo
+        drop_cols = ["nombre_pais", "continente_mongo",
+                     "region_mongo", "capital_mongo", "poblacion_mongo"]
+        df_final.drop(columns=drop_cols, errors="ignore", inplace=True)
+
+        # Eliminar cualquier columna _x / _y residual del merge
+        cols_dup = [c for c in df_final.columns if c.endswith("_x") or c.endswith("_y")]
+        if cols_dup:
+            log.warning("T4 → Eliminando columnas duplicadas residuales: %s", cols_dup)
+            df_final.drop(columns=cols_dup, inplace=True)
+
+        log.info("T4 → Columnas finales: %s", list(df_final.columns))
 
         if df_final.empty:
             raise ValueError(
@@ -218,7 +237,8 @@ def etl_sql_nosql():
     # ──────────────────────────────────────────────────────────────
     @task()
     def t5_cargar_dw(integrado_json: str):
-        df = pd.read_json(integrado_json, orient="records")
+        import io
+        df = pd.read_json(io.StringIO(integrado_json), orient="records")
         log.info("T5 → Cargando %d registros en %s...", len(df), SQLITE_DW)
 
         conn = sqlite3.connect(SQLITE_DW)
