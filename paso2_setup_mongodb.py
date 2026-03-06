@@ -71,17 +71,15 @@ def cargar_json(ruta: str):
 # CONEXIÓN
 # ─────────────────────────────────────────
 
-print("=" * 55)
-print("  PASO 2 — Importando JSONs a MongoDB")
-print("=" * 55)
+print("PASO 2 — Importando JSONs a MongoDB")
 print(f"\nConectando a: {MONGO_URI}")
 
 try:
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
     client.admin.command("ping")
-    print("✅  Conexión exitosa a MongoDB")
+    print("Conexión exitosa a MongoDB")
 except Exception as e:
-    print(f"❌  No se pudo conectar a MongoDB: {e}")
+    print(f"No se pudo conectar a MongoDB: {e}")
     print("    Verifica que la URI sea correcta y que el servidor esté activo.")
     exit(1)
 
@@ -95,14 +93,14 @@ for coleccion, archivo in ARCHIVOS.items():
     print(f"\n[→] Colección: '{coleccion}'  |  Archivo: '{archivo}'")
 
     if not os.path.exists(archivo):
-        print(f"    ⚠️  Archivo no encontrado: {archivo}  (se omite)")
+        print(f"Archivo no encontrado: {archivo}  (se omite)")
         continue
 
     documentos = cargar_json(archivo)
     print(f"    Documentos leídos: {len(documentos)}")
 
     if not documentos:
-        print("    ⚠️  Lista vacía, se omite.")
+        print("    Lista vacía, se omite.")
         continue
 
     # Limpiar colección si ya existe (para idempotencia)
@@ -110,17 +108,16 @@ for coleccion, archivo in ARCHIVOS.items():
 
     try:
         resultado = db[coleccion].insert_many(documentos, ordered=False)
-        print(f"    ✅  Insertados: {len(resultado.inserted_ids)}")
+        print(f"Insertados: {len(resultado.inserted_ids)}")
     except BulkWriteError as bwe:
-        print(f"    ⚠️  Insertados con errores parciales: {bwe.details}")
+        print(f"Insertados con errores parciales: {bwe.details}")
 
 # ─────────────────────────────────────────
 # VERIFICACIÓN
 # ─────────────────────────────────────────
 
-print("\n" + "=" * 55)
-print("  VERIFICACIÓN FINAL")
-print("=" * 55)
+
+print("VERIFICACION")
 
 for coleccion in ARCHIVOS.keys():
     count = db[coleccion].count_documents({})
@@ -130,7 +127,7 @@ for coleccion in ARCHIVOS.keys():
     doc = db[coleccion].find_one({}, {"_id": 0})
     if doc:
         campos = list(doc.keys())
-        print(f"             Campos: {campos}")
+        print(f"Campos: {campos}")
 
 client.close()
-print("\n✅  Importación a MongoDB completada.")
+print("\nImportación a MongoDB completada.")
