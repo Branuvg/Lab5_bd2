@@ -3,6 +3,14 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+dblab5
+
+Datos_para_SQL/
+Datos_para_SQL/*
+
+Datos_para_MongoDB/
+Datos_para_MongoDB/*
+
 # C extensions
 *.so
 
