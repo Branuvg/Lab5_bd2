@@ -23,13 +23,20 @@ import os
 from pymongo import MongoClient
 from pymongo.errors import BulkWriteError
 
+from dotenv import load_dotenv, dotenv_values 
+
+load_dotenv() 
+
+# accessing and printing value
+print(os.getenv("CONNECTION_STRING"))
+
 # ─────────────────────────────────────────
 # CONFIGURACIÓN — ajusta según tu instancia
 # ─────────────────────────────────────────
 
 # MongoDB Atlas:  "mongodb+srv://usuario:password@cluster.mongodb.net/"
 # MongoDB local:  "mongodb://localhost:27017/"
-MONGO_URI = "mongodb://localhost:27017/"   # <- CAMBIA ESTO
+MONGO_URI = os.getenv("CONNECTION_STRING")
 
 DB_NAME = "turismo"
 
