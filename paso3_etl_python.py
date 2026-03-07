@@ -34,6 +34,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv, dotenv_values 
 load_dotenv() 
 
+
 # ─────────────────────────────────────────
 # CONFIGURACIÓN
 # ─────────────────────────────────────────
@@ -147,34 +148,40 @@ def extraer_bigmac_mongo(db) -> pd.DataFrame:
 def integrar(df_sql: pd.DataFrame, df_costos: pd.DataFrame, df_bigmac: pd.DataFrame) -> pd.DataFrame:
     log.info("Integrando datos en memoria...")
 
+    # ESTRATEGIA:
+    # - region, capital, poblacion, continente → MongoDB (están completos en los JSON)
+    # - tasa_de_envejecimiento                 → CSV/SQLite (el CSV tiene 101/106 NULLs
+    #                                            en los otros campos, solo este es útil)
+
+    # Del SQL solo traemos nombre_pais + tasa_de_envejecimiento
+    df_sql_slim = df_sql[["nombre_pais", "tasa_de_envejecimiento"]].copy()
+
     # Merge 1: costos + big mac (por país)
-    df_temp = pd.merge(
-        df_costos,
-        df_bigmac,
-        on="pais",
-        how="inner"
-    )
+    df_temp = pd.merge(df_costos, df_bigmac, on="pais", how="inner")
     log.info("  Después de merge costos+bigmac: %d filas", len(df_temp))
 
-    # Merge 2: resultado + SQL (por nombre de país)
+    # Merge 2: resultado + solo tasa_de_envejecimiento del CSV
     df_final = pd.merge(
         df_temp,
-        df_sql,
+        df_sql_slim,
         left_on="pais",
         right_on="nombre_pais",
         how="inner"
     )
     log.info("  Después de merge con SQL: %d filas", len(df_final))
 
-    # Limpiar columnas duplicadas
+    # Limpiar columna auxiliar del join
     df_final.drop(columns=["nombre_pais"], inplace=True, errors="ignore")
 
-    # Usar continente de SQL si está disponible, sino de Mongo
-    if "continente" in df_final.columns and "continente_mongo" in df_final.columns:
-        df_final["continente"] = df_final["continente"].combine_first(df_final["continente_mongo"])
-        df_final.drop(columns=["continente_mongo"], inplace=True, errors="ignore")
-    elif "continente_mongo" in df_final.columns:
+    # Renombrar continente_mongo → continente
+    if "continente_mongo" in df_final.columns:
         df_final.rename(columns={"continente_mongo": "continente"}, inplace=True)
+
+    # Eliminar cualquier _x / _y residual del merge
+    cols_dup = [c for c in df_final.columns if c.endswith("_x") or c.endswith("_y")]
+    if cols_dup:
+        log.warning("  Columnas duplicadas eliminadas: %s", cols_dup)
+        df_final.drop(columns=cols_dup, inplace=True)
 
     # Ordenar columnas finales
     columnas_orden = [
