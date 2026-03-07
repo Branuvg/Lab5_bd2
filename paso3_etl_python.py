@@ -279,10 +279,10 @@ def ejecutar_etl():
         cargar_dw(df_final)
 
         client.close()
-        log.info("✅  ETL completado exitosamente.")
+        log.info("ETL completado exitosamente.")
 
     except Exception as e:
-        log.error("❌  Error durante el ETL: %s", e, exc_info=True)
+        log.error("Error durante el ETL: %s", e, exc_info=True)
 
 # ─────────────────────────────────────────
 # EJECUCIÓN
