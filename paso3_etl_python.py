@@ -31,14 +31,17 @@ from datetime import datetime
 import pandas as pd
 from pymongo import MongoClient
 
+from dotenv import load_dotenv, dotenv_values 
+load_dotenv() 
+
 # ─────────────────────────────────────────
 # CONFIGURACIÓN
 # ─────────────────────────────────────────
 
-MONGO_URI  = "mongodb://localhost:27017/"   # <- CAMBIA si usas Atlas
-DB_MONGO   = "turismo"
-DB_FUENTE  = "fuente_sql.db"
-DB_DW      = "dw.db"
+MONGO_URI = os.getenv("CONNECTION_STRING")
+DB_MONGO = "turismo"
+DB_FUENTE = "fuente_sql.db"
+DB_DW = "dw.db"
 
 COLECCIONES_COSTOS = ["europa", "africa", "america", "asia"]
 
